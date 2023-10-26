@@ -1,19 +1,49 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
-func main() {
-	Spider()
+const (
+	USERNAME = "root"
+	PASSWORD = ""
+	HOST     = "127.0.0.1"
+	PORT     = "3306"
+	DBNAME   = "douban_movie"
+)
+
+//数据库初始化
+var DB *sql.DB
+
+type MovieData struct {
+	Title    string `json:"title"`
+	Director string `json:"director"`
+	Picture  string `json:"picture"`
+	Actor    string `json:"actor"`
+	Year     string `json:"year"`
+	Score    string `json:"score"`
+	Quote    string `json:"quote"`
 }
 
-func Spider() {
+func main() {
+	InitDB()
+	for i := 0; i < 10; i++ {
+		fmt.Printf("正在爬取第 %d 页信息\n", i)
+		Spider(strconv.Itoa(i * 25))
+	}
+}
+
+func Spider(page string) {
 	//1.发送请求
 	client := http.Client{}
-	req, err := http.NewRequest("GET", "https://movie.douban.com/top250", nil)
+	req, err := http.NewRequest("GET", "https://movie.douban.com/top250?start="+page, nil)
 	if err != nil {
 		fmt.Println("req err", err)
 	}
@@ -41,10 +71,9 @@ func Spider() {
 		fmt.Println("解析失败", err)
 	}
 	//3.获取节点信息
-	// #content > div > div.article > ol > li:nth-child(1) > div > div.info > div.hd > a > span:nth-child(1)
-	// #content > div > div.article > ol > li:nth-child(1)
 	docDetail.Find("#content > div > div.article > ol > li"). //列表
 									Each(func(i int, s *goquery.Selection) { //列表下继续找
+			var data MovieData
 			title := s.Find("div > div.info > div.hd > a > span:nth-child(1)").Text()
 			img := s.Find("div > div.pic > a > img")
 			imgTmp, ok := img.Attr("src")
@@ -52,12 +81,68 @@ func Spider() {
 			score := s.Find("div > div.info > div.bd > div > span.rating_num").Text()
 			quote := s.Find("div > div.info > div.bd > p.quote").Text()
 			if ok {
-				fmt.Println("title", title)
-				fmt.Println("imgTmp", imgTmp)
-				fmt.Println("info", info)
-				fmt.Println("score", score)
-				fmt.Println("quote", quote)
+				director, actor, year := InfoSpite(info)
+				data.Title = title
+				data.Director = imgTmp
+				data.Picture = director
+				data.Actor = actor
+				data.Year = year
+				data.Score = score
+				data.Quote = strings.TrimSpace(quote)
+				if InsertData(data) {
+					//fmt.Println("插入成功")
+				} else {
+					fmt.Println("插入失败")
+					return
+				}
 			}
 		})
+	fmt.Println("插入成功")
+	return
 	//4.保存信息
+}
+
+func InfoSpite(info string) (director, actor, year string) {
+	directorRe, _ := regexp.Compile(`导演:(.*)主演:`)
+	director = string(directorRe.Find([]byte(info)))
+
+	actorRe, _ := regexp.Compile(`主演:(.*)`)
+	actor = string(actorRe.Find([]byte(info)))
+
+	yearRe, _ := regexp.Compile(`(\d+)`)
+	year = string(yearRe.Find([]byte(info)))
+	return
+}
+
+func InitDB() {
+	path := strings.Join([]string{USERNAME, ":", PASSWORD, "@tcp(", HOST, ":", PORT, ")/", DBNAME, "?charset=utf8"}, "")
+	DB, _ = sql.Open("mysql", path)
+	DB.SetConnMaxLifetime(10)
+	DB.SetMaxIdleConns(5)
+	if err := DB.Ping(); err != nil {
+		fmt.Println("open database fail")
+		return
+	}
+	fmt.Println("connect success")
+}
+
+func InsertData(movieData MovieData) bool {
+	//新建一个事务
+	tx, err := DB.Begin()
+	if err != nil {
+		fmt.Println("begin err", err)
+		return false
+	}
+	stmt, err := tx.Prepare("INSERT INTO movie_data (`Title`,`Director`,`Picture`,`Actor`,`Year`,`Score`,`Quote`) VALUES (?,?,?,?,?,?,?)")
+	if err != nil {
+		fmt.Println("prepare fail err", err)
+		return false
+	}
+	_, err = stmt.Exec(movieData.Title, movieData.Director, movieData.Picture, movieData.Actor, movieData.Year, movieData.Score, movieData.Quote)
+	if err != nil {
+		fmt.Println("exec fail", err)
+		return false
+	}
+	_ = tx.Commit()
+	return true
 }
