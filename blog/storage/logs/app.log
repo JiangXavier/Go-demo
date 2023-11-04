@@ -10,3 +10,6 @@
 2023/11/02 20:27:08 {"callers":["E:/programs/Go-demo/blog/main.go: 25 main.init.0"],"level":"info","message":"eddycjy: go-programming-tour-book/blog-service","time":1698928028938323100}
 2023/11/02 20:37:44 {"callers":["E:/programs/Go-demo/blog/main.go: 25 main.init.0"],"level":"info","message":"eddycjy: go-programming-tour-book/blog-service","time":1698928664625589700}
 2023/11/02 21:10:36 {"callers":["E:/programs/Go-demo/blog/main.go: 25 main.init.0"],"level":"info","message":"eddycjy: go-programming-tour-book/blog-service","time":1698930636648527900}
+2023/11/04 22:49:50 {"callers":["E:/programs/Go-demo/blog/main.go: 25 main.init.0"],"level":"info","message":"eddycjy: go-programming-tour-book/blog-service","time":1699109390793231200}
+2023/11/04 22:54:17 {"callers":["E:/programs/Go-demo/blog/main.go: 25 main.init.0"],"level":"info","message":"eddycjy: go-programming-tour-book/blog-service","time":1699109657550836300}
+2023/11/04 22:57:28 {"callers":["E:/programs/Go-demo/blog/main.go: 25 main.init.0"],"level":"info","message":"eddycjy: go-programming-tour-book/blog-service","time":1699109848711727800}

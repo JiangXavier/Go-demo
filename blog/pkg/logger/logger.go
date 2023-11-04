@@ -4,22 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io"
 	"log"
 	"runtime"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type Level int8
-type Fields map[string]interface{}
 
-type Logger struct {
-	newLogger *log.Logger
-	ctx       context.Context
-	fields    Fields
-	callers   []string
-}
+type Fields map[string]interface{}
 
 const (
 	LevelDebug Level = iota
@@ -46,6 +41,13 @@ func (l Level) String() string {
 		return "panic"
 	}
 	return ""
+}
+
+type Logger struct {
+	newLogger *log.Logger
+	ctx       context.Context
+	fields    Fields
+	callers   []string
 }
 
 func NewLogger(w io.Writer, prefix string, flag int) *Logger {
@@ -164,8 +166,8 @@ func (l *Logger) Info(ctx context.Context, v ...interface{}) {
 	l.WithContext(ctx).WithTrace().Output(LevelInfo, fmt.Sprint(v...))
 }
 
-func (l *Logger) Infof(format string, v ...interface{}) {
-	l.Output(LevelInfo, fmt.Sprintf(format, v...))
+func (l *Logger) Infof(ctx context.Context, format string, v ...interface{}) {
+	l.WithContext(ctx).WithTrace().Output(LevelInfo, fmt.Sprintf(format, v...))
 }
 
 func (l *Logger) Warn(ctx context.Context, v ...interface{}) {
@@ -180,8 +182,8 @@ func (l *Logger) Error(ctx context.Context, v ...interface{}) {
 	l.WithContext(ctx).WithTrace().Output(LevelError, fmt.Sprint(v...))
 }
 
-func (l *Logger) Errorf(format string, v ...interface{}) {
-	l.Output(LevelError, fmt.Sprintf(format, v...))
+func (l *Logger) Errorf(ctx context.Context, format string, v ...interface{}) {
+	l.WithContext(ctx).WithTrace().Output(LevelError, fmt.Sprintf(format, v...))
 }
 
 func (l *Logger) Fatal(ctx context.Context, v ...interface{}) {
