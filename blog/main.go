@@ -59,37 +59,6 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	//message := `
-	//<p> Hello %s,</p>
-	//
-	//	<p style="text-indent:2em">test test test test test test test test test test test test.</p>
-	//	<p style="text-indent:2em">test test test test test test test test test test test test.</p>
-	//
-	//	<p style="text-indent:2em">test test test test test test test test test test test test.</P>
-	//
-	//	<p style="text-indent:2em">Best Wishes!</p>
-	//`
-	//
-	//m := gomail.NewMessage()
-	//m.SetHeader("From", global.EmailSetting.UserName) // 发件人
-	//
-	//m.SetHeader("To", "1583939979@qq.com") // 收件人，可以多个收件人，但必须使用相同的 SMTP 连接
-	//
-	//m.SetHeader("Subject", "Hello!") // 邮件主题
-	//
-	//m.SetBody("text/html", fmt.Sprintf(message, "testUser"))
-	//
-	//d := gomail.NewDialer(
-	//	global.EmailSetting.Host,
-	//	global.EmailSetting.Port,
-	//	global.EmailSetting.UserName,
-	//	global.EmailSetting.Password,
-	//)
-	//d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-	//if err := d.DialAndSend(m); err != nil {
-	//	panic(err)
-	//}
-
 	err := s.ListenAndServe()
 	if err != nil {
 		return
