@@ -6,6 +6,7 @@ import (
 	"blog/internal/routers"
 	"blog/pkg/logger"
 	"blog/pkg/setting"
+	"blog/pkg/tracer"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"log"
@@ -26,6 +27,19 @@ func init() {
 	if err != nil {
 		log.Fatalf("init.setupLogger err: %v", err)
 	}
+	err = setupTracer()
+	if err != nil {
+		log.Fatalf("init.setupTracer err: %v", err)
+	}
+}
+
+func setupTracer() error {
+	jaegerTracer, _, err := tracer.NewJaegerTracer("blog-service", "127.0.0.1:6831")
+	if err != nil {
+		return err
+	}
+	global.Tracer = jaegerTracer
+	return nil
 }
 
 // @title 博客系统
@@ -34,6 +48,7 @@ func init() {
 // @termsOfService https://github.com/go-programming-tour-book
 
 func main() {
+	// docker run -d --name jaeger -e COLLECTOR_ZIPKIN_HTTP_PORT=9411 -p 5775:5775/udp -p 6831:6831/udp -p 6832:6832/udp -p 5778:5778 -p 16686:16686 -p 14268:14268 -p 9411:9411 jaegertracing/all-in-one:1.16
 	gin.SetMode(global.ServerSetting.RunMode)
 	router := routers.NewRouter()
 	s := &http.Server{
@@ -43,26 +58,73 @@ func main() {
 		WriteTimeout:   global.ServerSetting.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
-	s.ListenAndServe()
+
+	//message := `
+	//<p> Hello %s,</p>
+	//
+	//	<p style="text-indent:2em">test test test test test test test test test test test test.</p>
+	//	<p style="text-indent:2em">test test test test test test test test test test test test.</p>
+	//
+	//	<p style="text-indent:2em">test test test test test test test test test test test test.</P>
+	//
+	//	<p style="text-indent:2em">Best Wishes!</p>
+	//`
+	//
+	//m := gomail.NewMessage()
+	//m.SetHeader("From", global.EmailSetting.UserName) // 发件人
+	//
+	//m.SetHeader("To", "1583939979@qq.com") // 收件人，可以多个收件人，但必须使用相同的 SMTP 连接
+	//
+	//m.SetHeader("Subject", "Hello!") // 邮件主题
+	//
+	//m.SetBody("text/html", fmt.Sprintf(message, "testUser"))
+	//
+	//d := gomail.NewDialer(
+	//	global.EmailSetting.Host,
+	//	global.EmailSetting.Port,
+	//	global.EmailSetting.UserName,
+	//	global.EmailSetting.Password,
+	//)
+	//d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	//if err := d.DialAndSend(m); err != nil {
+	//	panic(err)
+	//}
+
+	err := s.ListenAndServe()
+	if err != nil {
+		return
+	}
+
 }
 
 func setupSetting() error {
-	setting, err := setting.NewSetting()
+	s, err := setting.NewSetting()
 	if err != nil {
 		return err
 	}
-	err = setting.ReadSection("Server", &global.ServerSetting)
+	err = s.ReadSection("Server", &global.ServerSetting)
 	if err != nil {
 		return err
 	}
-	err = setting.ReadSection("App", &global.AppSetting)
+	err = s.ReadSection("App", &global.AppSetting)
 	if err != nil {
 		return err
 	}
-	err = setting.ReadSection("Database", &global.DatabaseSetting)
+	err = s.ReadSection("Database", &global.DatabaseSetting)
 	if err != nil {
 		return err
 	}
+
+	err = s.ReadSection("Email", &global.EmailSetting)
+	if err != nil {
+		return err
+	}
+	err = s.ReadSection("JWT", &global.JWTSetting)
+	if err != nil {
+		return err
+	}
+
+	global.JWTSetting.Expire *= time.Second
 
 	global.ServerSetting.ReadTimeout *= time.Second
 	global.ServerSetting.WriteTimeout *= time.Second

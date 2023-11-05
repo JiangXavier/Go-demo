@@ -28,3 +28,18 @@ Database:
   ParseTime: True
   MaxIdleConns: 10
   MaxOpenConns: 30
+
+JWT:
+  Secret: eddycjy
+  Issuer: blog-service
+  Expire: 7200
+
+Email:
+  Host: smtp.qq.com
+  Port: 465
+  UserName: @qq.com
+  Password:
+  IsSSL: true
+  From: @qq.com
+  To:
+    - @qq.com
